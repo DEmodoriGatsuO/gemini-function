@@ -150,7 +150,22 @@ def create_google_doc(title, content_requests):
             'mimeType': 'application/vnd.google-apps.document'
         }
         created_doc = drive_service.files().create(body=doc_body, fields='id,webViewLink').execute()
+        permission = {
+            'type': 'user',
+            'role': 'reader',
+            'emailAddress': 'shougoss90@gmail.com'
+        }
         document_id = created_doc.get('id')
+        try:
+            drive_service.permissions().create(
+                fileId=document_id,
+                body=permission,
+                fields='id'
+            ).execute()
+            print(f"Shared document {document_id} with admin")
+        except Exception as share_e:
+            print(f"Error sharing document {document_id}: {share_e}")
+            
         doc_url = created_doc.get('webViewLink')
 
         if not document_id:
