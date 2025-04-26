@@ -5,9 +5,8 @@ from flask import Flask, request, jsonify
 import google.cloud.aiplatform as aiplatform
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
-from google.auth import default # ランタイムサービスアカウントの認証情報を取得
+from google.auth import default
 
-# --- 設定項目 ---
 GCP_PROJECT_ID = os.environ.get('GCP_PROJECT_ID')
 GCP_REGION = os.environ.get('GCP_REGION', 'us-central1')
 GEMINI_MODEL_NAME = "gemini-2.0-flash-lite"
@@ -243,21 +242,6 @@ def format_docs_requests(gemini_result, url):
                     'fields': 'weightedFontFamily,fontSize'
                 }
             })
-            # 背景色なども追加可能
-            # requests_list.append({
-            #     'updateParagraphStyle': {
-            #         'range': {'startIndex': code_start_index, 'endIndex': current_index - 2},
-            #         'paragraphStyle': {
-            #             'shading': {
-            #                 'backgroundColor': {
-            #                     'color': {'rgbColor': {'red': 0.95, 'green': 0.95, 'blue': 0.95}} # 薄いグレー
-            #                 }
-            #             }
-            #         },
-            #         'fields': 'shading'
-            #     }
-            # })
-
 
     # --- 2. URLとページ名 ---
     page_title = gemini_result.get("page_title", "タイトル取得失敗")
