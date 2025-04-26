@@ -148,7 +148,7 @@ def create_google_doc(title, content_requests):
         permission = {
             'type': 'user',
             'role': 'reader',
-            'emailAddress': 'shougoss90@gmail.com'
+            'emailAddress': os.environ.get("ADMIN_ACOUNT")
         }
         document_id = created_doc.get('id')
         try:
