@@ -11,6 +11,8 @@ from vertexai.generative_models import GenerativeModel, Part, GenerationConfig
 
 GCP_PROJECT_ID = os.environ.get('GCP_PROJECT_ID')
 GCP_REGION = os.environ.get('GCP_REGION', 'us-central1')
+# Gemini model name
+# Note: The model name may vary based on the version and region. Check the Vertex AI documentation for the latest model names.
 GEMINI_MODEL_NAME = "gemini-2.0-flash-lite-001"
 
 # Configure Google Docs API 
