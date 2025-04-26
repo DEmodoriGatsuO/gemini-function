@@ -6,6 +6,8 @@ import google.cloud.aiplatform as aiplatform
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 from google.auth import default
+import vertexai
+from vertexai.generative_models import GenerativeModel, Part, GenerationConfig
 
 GCP_PROJECT_ID = os.environ.get('GCP_PROJECT_ID')
 GCP_REGION = os.environ.get('GCP_REGION', 'us-central1')
@@ -19,6 +21,7 @@ SCOPES = ['https://www.googleapis.com/auth/documents', 'https://www.googleapis.c
 app = Flask(__name__)
 
 # Init Gemini Client
+vertexai.init(project=GCP_PROJECT_ID, location=GCP_REGION)
 aiplatform.init(project=GCP_PROJECT_ID, location=GCP_REGION)
 gemini_model = aiplatform.gapic.PredictionServiceClient(client_options={"api_endpoint": f"{GCP_REGION}-aiplatform.googleapis.com"})
 
@@ -54,6 +57,7 @@ def get_page_title(url):
 
 def call_gemini(text_content, url):
     """Gemini APIを呼び出して、和訳、整形、名詞抽出を行う"""
+    model = GenerativeModel(GEMINI_MODEL_NAME)
     prompt = f"""以下のテキストを指定の形式で処理してください。
 
 # 元のテキスト:
@@ -87,40 +91,52 @@ def call_gemini(text_content, url):
 上記形式に従って、JSON文字列のみを出力してください。
 """
 
-    instance = aiplatform.gapic.instance.TextGenerationInstance(prompt=prompt)
-    parameters = aiplatform.gapic.PredictionServiceClient.PredictRequest.Parameters(
+    # 生成設定 (任意)
+    generation_config = GenerationConfig(
         temperature=0.5,
         max_output_tokens=2048,
         top_k=40,
         top_p=0.9
     )
-    endpoint = f"projects/{GCP_PROJECT_ID}/locations/{GCP_REGION}/publishers/google/models/{GEMINI_MODEL_NAME}"
 
     try:
-        response = gemini_model.predict(endpoint=endpoint, instances=[instance], parameters=parameters)
-        prediction = response.predictions[0].content
+        # テキスト生成を実行
+        response = model.generate_content(
+            [Part.from_text(prompt)],
+            generation_config=generation_config,
+            # safety_settings=... # 必要に応じてセーフティ設定を追加
+        )
 
-        # Geminiからの出力がJSON形式であることを期待し、パースする
-        # ```json ... ``` のようなマークダウン形式で返ってくる場合があるため、```json と ``` を除去
-        cleaned_prediction = re.sub(r'^```json\s*', '', prediction.strip())
-        cleaned_prediction = re.sub(r'\s*```$', '', cleaned_prediction)
+        # レスポンスからテキスト部分を取得
+        prediction = response.text # response.candidates[0].content.parts[0].text の方が確実な場合あり
 
-        result = json.loads(cleaned_prediction)
-        return result
-
-    except json.JSONDecodeError as e:
-        print(f"Error decoding Gemini JSON response: {e}")
-        print(f"Raw Gemini response: {prediction}")
-        
+        # JSONパースを試みる (Geminiの出力が常に期待通りとは限らないため注意)
+        try:
+            # ```json ... ``` を除去 (念のため)
+            cleaned_prediction = re.sub(r'^```json\s*', '', prediction.strip())
+            cleaned_prediction = re.sub(r'\s*```$', '', cleaned_prediction)
+            result = json.loads(cleaned_prediction)
+            return result
+        except json.JSONDecodeError as e:
+            print(f"Error decoding Gemini JSON response: {e}")
+            print(f"Raw Gemini response: {prediction}")
+            # フォールバック: パース失敗時はエラー情報を含む辞書を返す
+            return {
+                "translated_summary": f"Gemini応答のJSON解析失敗: {e}\nRaw: {prediction}",
+                "code_blocks": [],
+                "page_title": "取得失敗",
+                "keywords": "抽出失敗"
+            }
+    except Exception as e:
+        print(f"Error calling Gemini API via GenerativeModel: {e}")
+        import traceback
+        traceback.print_exc()
         return {
-            "translated_summary": "Geminiからの応答の解析に失敗しました。",
+            "translated_summary": f"Gemini API呼び出しエラー: {e}",
             "code_blocks": [],
             "page_title": "取得失敗",
             "keywords": "抽出失敗"
         }
-    except Exception as e:
-        print(f"Error calling Gemini API: {e}")
-        raise
 
 def create_google_doc(title, content_requests):
     """Googleドキュメントを作成し、指定された内容とスタイルで書き込む"""
