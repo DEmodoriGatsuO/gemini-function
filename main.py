@@ -9,7 +9,7 @@ from google.auth import default
 
 GCP_PROJECT_ID = os.environ.get('GCP_PROJECT_ID')
 GCP_REGION = os.environ.get('GCP_REGION', 'us-central1')
-GEMINI_MODEL_NAME = "gemini-2.0-flash-lite"
+GEMINI_MODEL_NAME = "gemini-2.0-flash-lite-001"
 
 # Google Docs APIの設定
 # ランタイムサービスアカウントを使用するため、キーファイルは不要
