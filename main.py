@@ -71,7 +71,7 @@ def call_gemini(text_content, url):
 
 # 処理指示:
 1.  元のテキストを日本語に自然に和訳してください。
-2.  和訳した内容のあとに、表現をわかりやすく変換し、ポイントを箇条書き（各項目の先頭は「・」）を追記してください。
+2.  和訳した内容は、表現をわかりやすく変換し、ポイントを箇条書き（各項目の先頭は「・」）でまとめてください。
 3.  元のテキストに含まれるコードブロック（```で囲まれた部分）は、内容を保持し、コードブロックとしてわかるように ``` で囲んでください。
 4.  元のURLからWebページのタイトルを取得してください。
 5.  和訳した文章の内容と元のテキストのテーマに最も関連性の高い重要な名詞を10個程度、カンマ区切りでリストアップしてください。固有名詞や専門用語を優先してください。
@@ -197,10 +197,10 @@ def format_docs_requests(gemini_result, url):
     requests_list.append({
         'insertText': {
             'location': {'index': current_index},
-            'text': "1 - Report\n"
+            'text': "1 - Summary\n"
         }
     })
-    current_index += len("1 - Report\n")
+    current_index += len("1 - Summary\n")
     requests_list.append({
         'updateParagraphStyle': {
             'range': {'startIndex': 1, 'endIndex': current_index},
