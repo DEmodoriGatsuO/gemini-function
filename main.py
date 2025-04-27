@@ -149,7 +149,7 @@ def create_google_doc(title, content_requests):
         created_doc = drive_service.files().create(body=doc_body, fields='id,webViewLink').execute()
         permission = {
             'type': 'user',
-            'role': 'owner',
+            'role': 'reader',
             'emailAddress': os.environ.get("ADMIN_ACOUNT")
         }
         document_id = created_doc.get('id')
