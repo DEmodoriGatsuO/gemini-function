@@ -149,7 +149,7 @@ def create_google_doc(title, content_requests):
         created_doc = drive_service.files().create(body=doc_body, fields='id,webViewLink').execute()
         permission = {
             'type': 'user',
-            'role': 'reader',
+            'role': 'owner',
             'emailAddress': os.environ.get("ADMIN_ACOUNT")
         }
         document_id = created_doc.get('id')
@@ -327,6 +327,13 @@ def format_docs_requests(gemini_result, url):
 @app.route('/', methods=['POST'])
 def process_text():
     """HTTP POSTリクエストを受け取り、テキスト処理を実行してDocs URLを返す"""
+
+    # Get API key from request header
+    api_key = request.headers.get('X-API-Key')
+    # Check if API key is valid (compare with stored key)
+    if not api_key or api_key != os.environ.get('API_KEY'):
+        return jsonify({"error": "Unauthorized - Invalid or missing API key"}), 401
+    
     if not request.is_json:
         return jsonify({"error": "Request must be JSON"}), 400
 
